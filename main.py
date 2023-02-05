@@ -1,10 +1,43 @@
 from flask import *
 import math
 import json, time
+import pandas as pd
+import pyodbc
 
 app = Flask(__name__)
 
-#Data stuff
+
+data = pd.read_csv (r'C:\Users\stani\Documents\GitHub\2022-COVID-19-County-Data-API\us-counties-2022.csv')   
+df = pd.DataFrame(data)
+
+conn = pyodbc.connect('Driver={SQL Server};'
+                      'Server=mysqlserver808;'
+                      'Database=mySampleDatabase;'
+                      'Trusted_Connection=yes;')
+cursor = conn.cursor()
+cursor.execute('''
+		CREATE TABLE covid (
+			date DATE,
+			county nvarchar(50),
+			state nvarchar(50),
+            fips int,
+            cases int,
+            deaths int
+			)
+               ''')
+for row in df.itertuples():
+    cursor.execute('''
+                INSERT INTO covid (date, county, state, fips, cases, deaths)
+                VALUES (?,?,?,?,?,?)
+                ''',
+                row.date, 
+                row.county,
+                row.state,
+                row.fips, 
+                row.cases,
+                row.deaths
+                )
+conn.commit()
 
 #test route
 
@@ -28,7 +61,9 @@ def data_page():
 
     #creating response
 
-    deaths = ''
+    #might need single quotes around equals
+    query = f'SELECT deaths FROM covid WHERE date={date}-2022 AND county ={county}'
+    deaths = pd.read_sql_query( query , conn)
     response = ''
 
     #if statement for data:
