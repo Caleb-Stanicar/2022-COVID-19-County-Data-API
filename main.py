@@ -2,6 +2,7 @@ from flask import *
 import math
 import json, time
 import pandas as pd
+import mysql.connector
 
 app = Flask(__name__)
 
@@ -20,27 +21,53 @@ def home_page():
 @app.route('/data/', methods=['GET'])
 def data_page():
 
-    #getting data from user via /data/?county=INSERT-COUNTY-NAME&date=DATE-MM-DD
+    #getting data from user via /data/?county=INSERT-COUNTY-NAME&date=2022-MM-DD
 
-    county = str(request.args.get('county', None))
-    date = str(request.args.get('date', None)) 
+    county = "missoula"
+    date = "2022-12-01"
+    #county = str(request.args.get('county', None))
+    #date = str(request.args.get('date', None)) 
 
-    #creating response
+    try:
+        connection = mysql.connector.connect(host='localhost',
+                                            database='covid_data',
+                                            user='root',
+                                            password='INSERT PASSWORD')
 
-    #might need single quotes around equals
-    query = f'SELECT deaths FROM covid WHERE date ={date}-2022 AND county ={county}'
-    deaths = pd.read_sql_query( query , conn)
-    response = ''
+        #creating response
+
+        #might need single quotes around equals
+        sql_select_Query = f"SELECT * FROM covid_data.covid_data WHERE date = \"{date}\" and county = \"{county}\""
+        response = ''
+
+        cursor = connection.cursor()
+        cursor.execute(sql_select_Query)
+        # get all records
+        records = cursor.fetchall()
+        print("\nPrinting each row")
+        print(records)
+        deaths = records[0][5]
+
+    except mysql.connector.Error as e:
+        print("Error reading data from MySQL table", e)
+        data_set = {'Page': 'Data', 'Message': "Error reading data from MySQL table", 'Timestamp': time.time()}
+        json_dump = json.dumps(data_set)
+        print(json_dump)
+    finally:
+        if connection.is_connected():
+            connection.close()
+            cursor.close()
+            print("MySQL connection is closed")
 
     #if statement for data:
-    if True:
-        response = f'{county} experienced {deaths} deaths on {date}-2022'
+    if records != None:
+        response = f'{county} experienced {deaths} total deaths as of {date}'
     else:
         response = "NOT A VALID DATE OR COUNTY"
 
     #returning via json
 
-    data_set = {'Page': 'Data', 'Message': response, 'Deaths': deaths, 'Timestamp': time.time()}
+    data_set = {'Page': 'Data', 'Message': response, 'Deaths': deaths, 'Fips': records[0][3], 'Cases': records[0][4], 'Timestamp': time.time()}
     json_dump = json.dumps(data_set)
 
     return json_dump
