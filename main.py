@@ -23,10 +23,8 @@ def data_page():
 
     #getting data from user via /data/?county=INSERT-COUNTY-NAME&date=2022-MM-DD
 
-    county = "missoula"
-    date = "2022-12-01"
-    #county = str(request.args.get('county', None))
-    #date = str(request.args.get('date', None)) 
+    county = str(request.args.get('county', None))
+    date = str(request.args.get('date', None)) 
 
     try:
         connection = mysql.connector.connect(host='localhost',
