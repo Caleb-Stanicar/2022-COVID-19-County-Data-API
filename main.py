@@ -67,6 +67,7 @@ def data_page():
 
     data_set = {'Page': 'Data', 'Message': response, 'Deaths': deaths, 'Fips': records[0][3], 'Cases': records[0][4], 'Timestamp': time.time()}
     json_dump = json.dumps(data_set)
+    print(json_dump)
 
     return json_dump
 
